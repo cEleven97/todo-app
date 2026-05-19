@@ -49,19 +49,19 @@ jobs:
           " > tauri.ci.json
           mv tauri.ci.json tauri.conf.json
 
-      - name: Build ${{ matrix.target }}
+      - name: Build ${{ matrix.target }} (app only, skip DMG)
         working-directory: tauri-app
-        run: pnpm tauri build --target ${{ matrix.target }}
+        run: pnpm tauri build --target ${{ matrix.target }} --bundles app
 
-      - name: Rename artifact
-        working-directory: tauri-app/src-tauri/target/${{ matrix.target }}/release/bundle/dmg
+      - name: Zip .app
         run: |
-          mv *.dmg Todo_${{ matrix.target }}.dmg
+          cd tauri-app/src-tauri/target/${{ matrix.target }}/release/bundle/macos
+          zip -r Todo_${{ matrix.target }}.zip Todo.app
 
       - uses: actions/upload-artifact@v4
         with:
           name: Todo_${{ matrix.target }}
-          path: tauri-app/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+          path: tauri-app/src-tauri/target/${{ matrix.target }}/release/bundle/macos/Todo_${{ matrix.target }}.zip
 
   build-windows:
     runs-on: windows-latest

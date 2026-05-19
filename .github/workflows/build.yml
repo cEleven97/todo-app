@@ -124,7 +124,17 @@ jobs:
           else
             TAG=${LATEST#v}
             IFS='.' read -r MAJOR MINOR PATCH <<< "$TAG"
-            PATCH=$((PATCH + 1))
+            MSG=$(git log -1 --pretty=%B)
+            if echo "$MSG" | grep -q '\[major\]'; then
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+            elif echo "$MSG" | grep -q '\[minor\]'; then
+              MINOR=$((MINOR + 1))
+              PATCH=0
+            else
+              PATCH=$((PATCH + 1))
+            fi
             NEXT="${MAJOR}.${MINOR}.${PATCH}"
           fi
           echo "next=$NEXT" >> $GITHUB_OUTPUT

@@ -140,11 +140,35 @@ jobs:
           echo "next=$NEXT" >> $GITHUB_OUTPUT
           echo "Will release v$NEXT"
 
-      - uses: actions/download-artifact@v4
+      - name: Download macOS aarch64
+        uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
-          pattern: Todo_*
-          merge-multiple: true
+          name: Todo_aarch64-apple-darwin
           path: artifacts
+
+      - name: Download macOS x86_64
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Todo_x86_64-apple-darwin
+          path: artifacts
+
+      - name: Download Windows
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: Todo_x86_64-pc-windows-msvc
+          path: artifacts
+
+      - name: List all artifacts
+        run: ls -laR artifacts/
+
+      - name: Flatten artifacts for release
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec cp {} release/ \;
+          ls -la release/
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -173,7 +197,7 @@ jobs:
 
             ### Windows
             下载 `.msi` 或 `.exe`，双击安装即可，无需额外操作。
-          files: artifacts/*
+          files: release/*
           draft: false
           prerelease: false
         env:

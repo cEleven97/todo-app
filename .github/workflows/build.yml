@@ -57,35 +57,16 @@ jobs:
 
       - name: Build ${{ matrix.target }}
         working-directory: tauri-app
-        run: |
-          if [ "${{ matrix.target }}" = "aarch64-apple-darwin" ]; then
-            pnpm tauri build --target ${{ matrix.target }}
-          else
-            pnpm tauri build --target ${{ matrix.target }} --bundles app
-          fi
+        run: pnpm tauri build --target ${{ matrix.target }}
 
       - name: Rename DMG
-        if: matrix.target == 'aarch64-apple-darwin'
         working-directory: tauri-app/src-tauri/target/${{ matrix.target }}/release/bundle/dmg
         run: mv *.dmg Todo_${{ matrix.target }}.dmg
 
-      - name: Zip .app
-        if: matrix.target == 'x86_64-apple-darwin'
-        run: |
-          cd tauri-app/src-tauri/target/${{ matrix.target }}/release/bundle/macos
-          zip -r Todo_${{ matrix.target }}.zip Todo.app
-
       - uses: actions/upload-artifact@v4
-        if: matrix.target == 'aarch64-apple-darwin'
         with:
           name: Todo_${{ matrix.target }}
           path: tauri-app/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/Todo_${{ matrix.target }}.dmg
-
-      - uses: actions/upload-artifact@v4
-        if: matrix.target == 'x86_64-apple-darwin'
-        with:
-          name: Todo_${{ matrix.target }}
-          path: tauri-app/src-tauri/target/${{ matrix.target }}/release/bundle/macos/Todo_${{ matrix.target }}.zip
 
   build-windows:
     runs-on: windows-latest
@@ -110,16 +91,23 @@ jobs:
         working-directory: tauri-app
         run: pnpm tauri build --target x86_64-pc-windows-msvc
 
+      - name: List bundle output
+        run: |
+          echo "=== MSI ==="
+          dir /s /b tauri-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\msi\*.msi
+          echo "=== NSIS ==="
+          dir /s /b tauri-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\*.exe
+
       - uses: actions/upload-artifact@v4
         with:
-          name: Todo_windows
+          name: Todo_x86_64-pc-windows-msvc
           path: |
             tauri-app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
             tauri-app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
 
   release:
     needs: [build-macos, build-windows]
-    if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: always() && !cancelled()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -137,10 +125,10 @@ jobs:
             ## 安装说明
 
             ### macOS
-            下载 `Todo_aarch64-apple-darwin.dmg`（Apple 芯片）或 `Todo_x86_64-apple-darwin.zip`（Intel 芯片）
+            下载 `Todo_aarch64-apple-darwin.dmg`（Apple 芯片）或 `Todo_x86_64-apple-darwin.dmg`（Intel 芯片）
 
             由于未使用 Apple 付费证书，首次打开需要：
-            1. 双击打开 `.dmg` / 解压 `.zip`
+            1. 双击打开 `.dmg`
             2. 将 `Todo.app` 拖入 **应用程序** 文件夹
             3. **右键点击** `Todo.app` → **打开**
             4. 在弹出的对话框中再次点 **打开**

@@ -27,7 +27,7 @@ fn set_window_alpha(window: tauri::WebviewWindow, alpha: f64) -> Result<(), Stri
     let alpha_byte = (alpha.clamp(0.0, 1.0) * 255.0) as u8;
     unsafe {
         let ex_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
-        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_style | WS_EX_LAYERED as isize);
+        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex_style | (WS_EX_LAYERED.0 as isize));
         let _ = SetLayeredWindowAttributes(hwnd, windows::Win32::Foundation::COLORREF(0), alpha_byte, LWA_ALPHA);
     }
     Ok(())

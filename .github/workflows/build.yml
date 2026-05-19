@@ -133,6 +133,27 @@ jobs:
         with:
           tag_name: v${{ github.run_number }}
           name: Build #${{ github.run_number }}
+          body: |
+            ## 安装说明
+
+            ### macOS
+            下载 `Todo_aarch64-apple-darwin.dmg`（Apple 芯片）或 `Todo_x86_64-apple-darwin.zip`（Intel 芯片）
+
+            由于未使用 Apple 付费证书，首次打开需要：
+            1. 双击打开 `.dmg` / 解压 `.zip`
+            2. 将 `Todo.app` 拖入 **应用程序** 文件夹
+            3. **右键点击** `Todo.app` → **打开**
+            4. 在弹出的对话框中再次点 **打开**
+            5. 以后直接双击即可正常使用
+
+            或者终端运行：
+
+            ```
+            xattr -cr /Applications/Todo.app
+            ```
+
+            ### Windows
+            下载 `.msi` 或 `.exe`，双击安装即可，无需额外操作。
           files: artifacts/*
           draft: false
           prerelease: false

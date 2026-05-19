@@ -93,10 +93,10 @@ jobs:
 
       - name: List bundle output
         run: |
-          echo "=== MSI ==="
-          dir /s /b tauri-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\msi\*.msi
-          echo "=== NSIS ==="
-          dir /s /b tauri-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\*.exe
+          Write-Host "=== MSI ==="
+          Get-ChildItem -Recurse tauri-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\msi\*.msi | Select-Object -ExpandProperty FullName
+          Write-Host "=== NSIS ==="
+          Get-ChildItem -Recurse tauri-app\src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\*.exe | Select-Object -ExpandProperty FullName
 
       - uses: actions/upload-artifact@v4
         with:

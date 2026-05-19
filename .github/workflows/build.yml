@@ -1,0 +1,90 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: tauri-app/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: tauri-app
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Strip signing identity for CI
+        working-directory: tauri-app/src-tauri
+        run: |
+          cat tauri.conf.json | python3 -c "
+          import json,sys
+          c=json.load(sys.stdin)
+          c['bundle']['macOS']['signingIdentity']=None
+          c['bundle']['macOS']['entitlements']=None
+          c['bundle']['macOS']['hardenedRuntime']=False
+          json.dump(c,sys.stdout,indent=2)
+          " > tauri.ci.json
+          mv tauri.ci.json tauri.conf.json
+
+      - name: Build ${{ matrix.target }}
+        working-directory: tauri-app
+        run: pnpm tauri build --target ${{ matrix.target }}
+
+      - name: Rename artifact
+        working-directory: tauri-app/src-tauri/target/${{ matrix.target }}/release/bundle/dmg
+        run: |
+          mv *.dmg Todo_${{ matrix.target }}.dmg
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Todo_${{ matrix.target }}
+          path: tauri-app/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: tauri-app/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: tauri-app
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Windows
+        working-directory: tauri-app
+        run: pnpm tauri build --target x86_64-pc-windows-msvc
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Todo_windows
+          path: |
+            tauri-app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
+            tauri-app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe

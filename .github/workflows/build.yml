@@ -10,6 +10,9 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+permissions:
+  contents: write
+
 jobs:
   build-macos:
     strategy:
@@ -113,3 +116,25 @@ jobs:
           path: |
             tauri-app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
             tauri-app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+
+  release:
+    needs: [build-macos, build-windows]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Todo_*
+          merge-multiple: true
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Build #${{ github.run_number }}
+          files: artifacts/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
